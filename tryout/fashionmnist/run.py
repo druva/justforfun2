@@ -92,7 +92,38 @@ def showLoss(history):
     plt.legend()
     plt.show()
 
-def run1():
+def plot_image(i, predictions_array, true_labels, images, class_names):
+  predictions_array, true_label, img = predictions_array[i], true_labels[i], images[i]
+  plt.grid(False)
+  plt.xticks([])
+  plt.yticks([])
+
+  plt.imshow(img[...,0], cmap=plt.cm.binary)
+
+  predicted_label = np.argmax(predictions_array)
+  if predicted_label == true_label:
+    color = 'blue'
+  else:
+    color = 'red'
+
+  plt.xlabel("{} {:2.0f}% ({})".format(class_names[predicted_label],
+                                100*np.max(predictions_array),
+                                class_names[true_label]),
+                                color=color)
+
+def plot_value_array(i, predictions_array, true_label):
+  predictions_array, true_label = predictions_array[i], true_label[i]
+  plt.grid(False)
+  plt.xticks([])
+  plt.yticks([])
+  thisplot = plt.bar(range(10), predictions_array, color="#777777")
+  plt.ylim([0, 1])
+  predicted_label = np.argmax(predictions_array)
+
+  thisplot[predicted_label].set_color('red')
+  thisplot[true_label].set_color('blue')
+
+def run1(itr):
     verbose = True
     dataset, metadata, train_dataset, test_dataset, class_names, num_train_examples, num_test_examples = initDataSet(verbose)
     # viewOneImage(test_dataset, verbose)
@@ -110,12 +141,13 @@ def run1():
     #What is epochs? why 5 value
     #what is fit?
     steps_per_epoch=math.ceil(num_train_examples/BATCH_SIZE)
-    for i in range(4):
+    for i in range(itr):
         print(f"Running Fit ({i+1})n times, steps_per_epoch={steps_per_epoch}")
         history = model.fit(train_dataset, epochs=8, steps_per_epoch=steps_per_epoch)
-    showLoss(history)
+    # showLoss(history)
+    return BATCH_SIZE, test_dataset, class_names, num_test_examples, model
 
-def run2():
+def run2(itr):
     verbose = True
     dataset, metadata, train_dataset, test_dataset, class_names, num_train_examples, num_test_examples = initDataSet(verbose)
     # viewOneImage(test_dataset, verbose)
@@ -130,10 +162,37 @@ def run2():
 
     test_dataset = test_dataset.cache().batch(BATCH_SIZE)
 
-    for i in range(4):
+    for i in range(itr):
         print(f"Running Fit ({i+1})n times")
         history = model.fit(train_dataset, epochs=8)
     showLoss(history)
+    return BATCH_SIZE, test_dataset, class_names, num_test_examples, model
 
-run1()
-run2()
+def run():
+    #Experiment 1
+    BATCH_SIZE, test_dataset, class_names, num_test_examples, model = run1(1)
+    #Experiment 2
+    # model = run2()
+
+    test_loss, test_accuracy = model.evaluate(test_dataset, steps=math.ceil(num_test_examples/BATCH_SIZE))
+    print('Accuracy on test dataset:', test_accuracy)
+
+
+    for test_images, test_labels in test_dataset.take(1):
+        test_images = test_images.numpy()
+        test_labels = test_labels.numpy()
+        predictions = model.predict(test_images)
+
+    # Plot the first X test images, their predicted label, and the true label
+    # Color correct predictions in blue, incorrect predictions in red
+    num_rows = 5
+    num_cols = 3
+    num_images = num_rows*num_cols
+    plt.figure(figsize=(2*2*num_cols, 2*num_rows))
+    for i in range(num_images):
+        plt.subplot(num_rows, 2*num_cols, 2*i+1)
+        plot_image(i, predictions, test_labels, test_images, class_names)
+        plt.subplot(num_rows, 2*num_cols, 2*i+2)
+        plot_value_array(i, predictions, test_labels)
+
+run()
