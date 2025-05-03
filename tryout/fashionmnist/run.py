@@ -84,7 +84,15 @@ def compileModel(model):
               metrics=['accuracy'])
     return model
 
-def run():
+def showLoss(history):
+    plt.xlabel('Epoch Number')
+    plt.ylabel('Loss Magnitude')
+    plt.plot(history.history['loss'], label='Training Loss')
+    plt.title('Training Loss over Epochs')
+    plt.legend()
+    plt.show()
+
+def run1():
     verbose = True
     dataset, metadata, train_dataset, test_dataset, class_names, num_train_examples, num_test_examples = initDataSet(verbose)
     # viewOneImage(test_dataset, verbose)
@@ -92,4 +100,40 @@ def run():
     model = createModel()
     model = compileModel(model)
 
-run()
+
+    BATCH_SIZE = 64
+    print(train_dataset)
+    train_dataset = train_dataset.cache().repeat().shuffle(num_train_examples).batch(BATCH_SIZE)
+    print(train_dataset)
+    test_dataset = test_dataset.cache().batch(BATCH_SIZE)
+
+    #What is epochs? why 5 value
+    #what is fit?
+    steps_per_epoch=math.ceil(num_train_examples/BATCH_SIZE)
+    for i in range(4):
+        print(f"Running Fit ({i+1})n times, steps_per_epoch={steps_per_epoch}")
+        history = model.fit(train_dataset, epochs=8, steps_per_epoch=steps_per_epoch)
+    showLoss(history)
+
+def run2():
+    verbose = True
+    dataset, metadata, train_dataset, test_dataset, class_names, num_train_examples, num_test_examples = initDataSet(verbose)
+    # viewOneImage(test_dataset, verbose)
+    # viewMoreImages(test_dataset, class_names, verbose)
+    model = createModel()
+    model = compileModel(model)
+
+
+    BATCH_SIZE = 64
+    train_dataset = train_dataset.cache() \
+                                .batch(BATCH_SIZE)  # No shuffle, no repeat
+
+    test_dataset = test_dataset.cache().batch(BATCH_SIZE)
+
+    for i in range(4):
+        print(f"Running Fit ({i+1})n times")
+        history = model.fit(train_dataset, epochs=8)
+    showLoss(history)
+
+run1()
+run2()
